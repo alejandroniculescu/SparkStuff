@@ -1,6 +1,3 @@
-# FlashX Docker image with ssh port forwarding and general ubuntu hackery
-
-
 #FROM ubuntu:14.04
 #MAINTAINER Alexander Niculescu <al3xander.niculescu@gmail.com>
 
@@ -32,75 +29,43 @@ RUN wget http://d3kbcqa49mib13.cloudfront.net/spark-$SPARK_BIN_VERSION.tgz && \
     rm /spark-$SPARK_BIN_VERSION.tgz
 
 
+#DGA
+#https://github.com/Sotera/distributed-graph-analytics/tree/master/dga-graphx
 
 
-#RUN apt-get update && apt-get install -y openssh-server
-#RUN mkdir /var/run/sshd
-#RUN echo 'root:screencast' | chpasswd
-#RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+CMD sudo apt-get update
+CMD sudo apt-get install software-properties-common
+CMD sudo apt-get install python-software-properties
 
-# SSH login fix. Otherwise user is kicked off after login
-#RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+#apt repository
+#RUN sudo apt-get install software-properties-common
 
+#Gradle
+CMD sudo add-apt-repository ppa:cwchien/gradle
+CMD sudo apt-get update
+CMD sudo apt-get install gradle
 
-###FLASHX CONF COMBINED FROM DOCKERFILE &&FLASHX QUICKSTART###
-#https://github.com/icoming/FlashX/wiki/FlashX-Quick-Start-Guide
-#https://github.com/wking/dockerfile
-
-RUN sudo apt-get update
-RUN sudo apt-get update
-RUN sudo apt-get install -y git cmake g++
-RUN sudo apt-get install -y libboost-dev libboost-system-dev libboost-filesystem-dev libnuma-dev libaio-dev libhwloc-dev libatlas-base-dev zlib1g-dev
-RUN sudo apt-get install -y libstxxl-dev zlib1g-dev
-
-RUN git clone https://github.com/icoming/FlashX.git
-
-#RUN sudo apt-get install wget
-#wget is for trilinos
-
-WORKDIR /FlashX
-RUN mkdir build
-WORKDIR build
-RUN cmake ..
-RUN make -j32
+#Scala
+# scala install
+wget www.scala-lang.org/files/archive/scala-2.11.7.deb
+sudo dpkg -i scala-2.11.7.deb
 
 
-####Install and compile R
-#https://www.digitalocean.com/community/tutorials/how-to-set-up-r-on-ubuntu-14-04
-RUN sudo sh -c 'echo "deb http://cran.rstudio.com/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
-RUN gpg --keyserver keyserver.ubuntu.com --recv-key E084DAB9
-RUN gpg -a --export E084DAB9 | sudo apt-key add -
-RUN sudo apt-get update
-RUN sudo apt-get -y install r-base
-
-#run R >> intstall igraph install.packages("igraph")
-RUN sudo su - -c "R -e \"install.packages('igraph', repos = 'http://cran.rstudio.com/')\""
-
-WORKDIR /FlashX
-RUN ./install_FlashR.sh
-
-#check to see if it's there ^^^?
-
-####R finished####
+# sbt installation
+echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 642AC823
+sudo apt-get update
+sudo apt-get install sbt
 
 
-CMD wget http://snap.stanford.edu/data/wiki-Vote.txt.gz
-CMD gunzip wiki-Vote.txt.gz
-CMD build/matrix/utils/el2fg conf/run_test.txt wiki-Vote.txt wiki-Vote
+# java install
+sudo apt-get install python-software-properties
+sudo add-apt-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
 
-CMD build/flash-graph/test-algs/test_algs flash-graph/conf/run_test.txt wiki-Vote.adj wiki-Vote.index wcc
 
-
-###FLASHX CONF END ###
 
 ##SPARK OUTPUT
 # Default action: show available commands on startup
-CMD ["spark-submit"]
-
-#SSH OUTPUT
-
-#ENV NOTVISIBLE "in users profile"
-#RUN echo "export VISIBLE=now" >> /etc/profile
-
-#EXPOSE 22
-#CMD ["/usr/sbin/sshd", "-D"]
+#CMD ["spark-submit"]
